@@ -519,15 +519,17 @@
         // IMPORTANT: The following global variables are provided by the canvas environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
-        // Define a mock configuration for local/external hosting to prevent Firebase initialization errors.
-        // !!! IMPORTANT: If hosting externally, REPLACE this MOCK_FIREBASE_CONFIG with YOUR actual Firebase project credentials.
+        // !!! EXTERNAL HOSTING NOTE !!!
+        // If you are running this outside of the secure environment, REPLACE the MOCK_FIREBASE_CONFIG
+        // below with your actual Firebase project credentials.
+        // ALSO: Ensure you have enabled the Anonymous sign-in provider in your Firebase Console > Authentication tab.
         const MOCK_FIREBASE_CONFIG = { 
-            apiKey: "YOUR_API_KEY", // <-- REPLACE THIS WITH YOUR ACTUAL API KEY
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // <-- REPLACE THIS
-            projectId: "YOUR_PROJECT_ID", // <-- REPLACE THIS
-            storageBucket: "YOUR_PROJECT_ID.appspot.com", // <-- REPLACE THIS
-            messagingSenderId: "YOUR_MESSAGING_ID", // <-- REPLACE THIS
-            appId: "YOUR_APP_ID" // <-- REPLACE THIS
+            apiKey: "YOUR_API_KEY", 
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID", 
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_ID",
+            appId: "YOUR_APP_ID"
         };
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : MOCK_FIREBASE_CONFIG;
         
@@ -603,40 +605,50 @@
             currentAppIdSpan.textContent = appId;
         } catch (e) {
             console.error("Error initializing Firebase:", e);
-            loadingInitial.textContent = "Error initializing application. Check console for details. (Try updating firebaseConfig if running externally)";
+            loadingInitial.innerHTML = `
+                <p style="color: var(--color-danger); font-weight: 700;">Error Initializing Firebase</p>
+                <p style="font-size: 0.9rem;">Check your console for configuration errors. If running externally, ensure MOCK_FIREBASE_CONFIG is fully replaced with your project keys.</p>
+            `;
+            // Removed 'return;' statement here to fix the SyntaxError
         }
         
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-                currentUserIdSpan.textContent = userId;
-                isAuthReady = true;
+        // Check if 'auth' was successfully initialized before attempting authentication listeners.
+        if (auth) {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    currentUserIdSpan.textContent = userId;
+                    isAuthReady = true;
 
-                // Stop loading and show the initial choice view
-                loadingInitial.classList.add('hidden');
-                mainContainer.classList.remove('hidden');
-                showView('initial');
+                    // Stop loading and show the initial choice view
+                    loadingInitial.classList.add('hidden');
+                    mainContainer.classList.remove('hidden');
+                    showView('initial');
 
-                // Start data listeners
-                if (db) {
-                    setupFirestoreListeners();
-                }
-            } else {
-                // Initial sign-in attempt
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
+                    // Start data listeners
+                    if (db) {
+                        setupFirestoreListeners();
                     }
-                } catch (error) {
-                    console.error("Authentication error:", error);
-                    // Update the error message to be less generic if auth fails after init
-                    loadingInitial.textContent = "Authentication failed. Check your Firebase credentials if running externally.";
+                } else {
+                    // Initial sign-in attempt
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            // Crucial step: Sign in anonymously to get a userId for Firestore security rules
+                            await signInAnonymously(auth);
+                        }
+                    } catch (error) {
+                        console.error("Authentication error:", error);
+                        // Update the error message to be more specific for external users
+                        loadingInitial.innerHTML = `
+                            <p style="color: var(--color-danger); font-weight: 700;">Authentication Failed</p>
+                            <p style="font-size: 0.9rem;">This means you need to enable the <strong>Anonymous</strong> sign-in provider in your Firebase Console > Authentication tab.</p>
+                        `;
+                    }
                 }
-            }
-        });
-
+            });
+        }
         // --- VIEW MANAGEMENT ---
 
         function showView(viewName) {
@@ -985,6 +997,7 @@
                 settingsStatusP.classList.add('text-green');
             } catch (e) {
                 console.error("Error saving settings:", e);
+                showModal("Database Error", "Could not save settings. Please check your Firestore security rules.");
                 settingsStatusP.textContent = 'Error saving settings to database.';
                 settingsStatusP.classList.remove('text-green');
                 settingsStatusP.classList.add('text-red');
@@ -1006,7 +1019,7 @@
                 showModal("Success", `Employee '${name}' added.`);
             } catch (e) {
                 console.error("Error adding employee:", e);
-                showModal("Error", "Could not add employee to database.");
+                showModal("Error", "Could not add employee to database. Check security rules.");
             }
         });
         
@@ -1022,7 +1035,7 @@
                         showModal("Deleted", "Employee removed successfully.");
                     } catch (e) {
                         console.error("Error deleting employee:", e);
-                        showModal("Error", "Could not delete employee from database.");
+                        showModal("Error", "Could not delete employee from database. Check security rules.");
                     }
                 }
             }
