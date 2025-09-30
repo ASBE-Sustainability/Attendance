@@ -404,7 +404,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" style="height: 2rem; width: 2rem; margin-bottom: 0.5rem;" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                             </svg>
-                            Camera access denied or unavailable.
+                            <!-- Error message will be inserted here by JS -->
                         </div>
                     </div>
                     
@@ -433,8 +433,13 @@
                 <!-- Admin Login -->
                 <div id="admin-login-card" class="admin-section" style="margin-bottom: 2rem;">
                     <h3 class="text-xl font-semibold text-red-700" style="margin-bottom: 1rem;">Admin Login</h3>
-                    <input type="text" id="admin-username" placeholder="Username (admin)" style="margin-bottom: 1rem;">
-                    <input type="password" id="admin-password" placeholder="Password (12345)" style="margin-bottom: 1rem;">
+                    <!-- HINT ADDED HERE -->
+                    <p class="text-sm text-gray" style="margin-bottom: 1rem; text-align: center;">Demo Credentials: <strong>admin</strong> / <strong>12345</strong></p>
+                    
+                    <!-- PLACEHOLDERS UPDATED -->
+                    <input type="text" id="admin-username" placeholder="Enter Username" style="margin-bottom: 1rem;">
+                    <input type="password" id="admin-password" placeholder="Enter Password" style="margin-bottom: 1rem;">
+                    
                     <button id="admin-login-btn" class="btn-primary" style="background-color: var(--color-danger);">Access Admin</button>
                     <p id="login-error" class="text-red hidden" style="font-size: 0.875rem; text-align: center; margin-top: 0.5rem;">Invalid credentials.</p>
                 </div>
@@ -445,10 +450,10 @@
                     <div class="admin-section" style="border: 1px solid #bfdbfe;">
                         <h3 class="text-lg font-semibold text-blue-700" style="margin-bottom: 0.5rem;">Office Location & Vicinity</h3>
                         <p class="text-sm text-gray" style="margin-bottom: 1rem;">Central coordinates and maximum distance (Haversine calculation).</p>
-                        <input type="number" id="office-lat" placeholder="Office Latitude (e.g., 37.7749)" step="0.000001" style="margin-bottom: 0.75rem;">
-                        <input type="number" id="office-lng" placeholder="Office Longitude (e.g., -122.4194)" step="0.000001" style="margin-bottom: 0.75rem;">
+                        <input type="number" id="office-lat" placeholder="Office Latitude (e.g., 9.62795)" step="0.000001" style="margin-bottom: 0.75rem;">
+                        <input type="number" id="office-lng" placeholder="Office Longitude (e.g., 76.33450)" step="0.000001" style="margin-bottom: 0.75rem;">
                         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                             <input type="number" id="office-radius" placeholder="Vicinity Radius (meters, e.g., 500)" step="1">
+                             <input type="number" id="office-radius" placeholder="Vicinity Radius (meters, e.g., 30)" step="1">
                              <span class="text-gray">meters</span>
                         </div>
                         <button id="save-settings-btn" class="btn-primary" style="background-color: var(--color-primary); padding: 0.5rem 1rem;">Save Settings</button>
@@ -540,7 +545,8 @@
         let app, db, auth;
         let userId = null;
         let isAuthReady = false;
-        let officeSettings = { lat: 37.7749, lng: -122.4194, radius: 500 }; // Default: San Francisco, 500m
+        // UPDATED DEFAULT LOCATION: 9.627950980633985, 76.33450555827847, Radius: 30 meters
+        let officeSettings = { lat: 9.627950980633985, lng: 76.33450555827847, radius: 30 }; 
         let employees = [];
         let attendanceRecords = [];
         let currentEmployee = null;
@@ -716,6 +722,7 @@
                     console.log("Office settings updated:", officeSettings);
                 } else {
                     // Initialize default settings if none exist
+                    // This is where the new default location is saved to the DB if it's the first run!
                     setDoc(getAdminConfigDocRef(), officeSettings).catch(console.error);
                 }
             }, (error) => console.error("Error listening to config:", error));
@@ -785,7 +792,7 @@
             });
         }
         
-        // --- CAMERA UTILS (No changes needed) ---
+        // --- CAMERA UTILS ---
 
         async function startCamera() {
             try {
@@ -800,9 +807,27 @@
                 videoFeed.classList.remove('hidden');
                 photoCanvas.classList.add('hidden');
                 cameraErrorDiv.classList.add('hidden');
+                cameraErrorDiv.querySelector('div').textContent = ''; // Clear previous error text
                 captureBtn.disabled = false;
             } catch (error) {
                 console.error("Camera access error:", error);
+                
+                let errorMessage = "Camera access denied or unavailable.";
+
+                if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+                    errorMessage = "Camera access was blocked. This often happens if the website is not running over HTTPS or the permission was permanently denied.";
+                    
+                    showModal(
+                        "Camera Blocked (Security Issue)", 
+                        "The browser requires a **secure connection (HTTPS)** to access your camera. If you are running locally, try using `localhost` or ensure your hosted site is using HTTPS. You may also need to reset the camera permission for this site in your browser settings.",
+                        false
+                    );
+                } else if (error.name === "NotFoundError") {
+                    errorMessage = "No camera device found on this device.";
+                }
+
+                // Update the visible error message in the attendance panel
+                cameraErrorDiv.querySelector('div').textContent = errorMessage;
                 cameraErrorDiv.classList.remove('hidden');
                 cameraErrorDiv.style.display = 'flex';
                 captureBtn.disabled = true;
