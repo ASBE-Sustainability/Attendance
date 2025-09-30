@@ -518,7 +518,18 @@
 
         // IMPORTANT: The following global variables are provided by the canvas environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Mock Config */ };
+        
+        // Define a mock configuration for local/external hosting to prevent Firebase initialization errors.
+        const MOCK_FIREBASE_CONFIG = { 
+            apiKey: "mock-key",
+            authDomain: "mock-app.firebaseapp.com",
+            projectId: "mock-project",
+            storageBucket: "mock-app.appspot.com",
+            messagingSenderId: "mock-id",
+            appId: "mock-app-id"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : MOCK_FIREBASE_CONFIG;
+        
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // --- GLOBAL STATE & FIREBASE SETUP ---
@@ -591,7 +602,7 @@
             currentAppIdSpan.textContent = appId;
         } catch (e) {
             console.error("Error initializing Firebase:", e);
-            loadingInitial.textContent = "Error initializing application. Check console for details.";
+            loadingInitial.textContent = "Error initializing application. Check console for details. (Try updating firebaseConfig if running externally)";
         }
         
         onAuthStateChanged(auth, async (user) => {
@@ -619,6 +630,7 @@
                     }
                 } catch (error) {
                     console.error("Authentication error:", error);
+                    // Update the error message to be less generic if auth fails after init
                     loadingInitial.textContent = "Authentication failed. Please check network connection.";
                 }
             }
