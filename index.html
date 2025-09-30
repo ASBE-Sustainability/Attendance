@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Selfie Attendance</title>
+    <style>
+        /* CSS Reset and Variables */
+        :root {
+            --color-primary: #1d4ed8; /* Blue-700 */
+            --color-secondary: #34d399; /* Green-400 */
+            --color-warning: #facc15; /* Yellow-500 */
+            --color-danger: #ef4444; /* Red-500 */
+            --color-background: #f0f4f8; /* Soft blue-gray */
+            --color-card-bg: rgba(255, 255, 255, 0.95);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--color-background);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Main Layout */
+        #app {
+            padding: 1rem;
+            width: 100%;
+        }
+        
+        #main-container {
+            width: 100%;
+            max-width: 32rem; /* Equivalent to max-w-2xl */
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); 
+            background-color: var(--color-card-bg);
+            backdrop-filter: blur(8px); 
+        }
+
+        /* Header and Navigation */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #bfdbfe; /* Blue-200 */
+        }
+        .app-title {
+            font-size: 1.875rem; /* 3xl */
+            font-weight: 800; /* extabold */
+            color: var(--color-primary);
+        }
+        .switch-btn {
+            font-size: 0.875rem; /* sm */
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px; /* full */
+            transition: all 0.15s;
+            border: none;
+            cursor: pointer;
+        }
+        /* Base style for the back/exit button */
+        .btn-exit-view {
+            background-color: #fee2e2; /* Red-100 */
+            color: var(--color-danger);
+        }
+        .btn-exit-view:hover { background-color: #fecaca; }
+
+        /* General Button Styles */
+        .btn-primary { 
+            transition: all 0.2s; 
+            border-radius: 0.75rem; 
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            color: white;
+            box-shadow: var(--shadow-md);
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); 
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Initial Choice Buttons */
+        .choice-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border-radius: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+            height: 8rem;
+        }
+        .choice-btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+        #employee-choice-btn { background-color: var(--color-primary); }
+        #admin-choice-btn { background-color: var(--color-danger); }
+        .choice-icon {
+            height: 2.5rem;
+            width: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner { 
+            border-top-color: #ffffff; 
+            animation: spin 1s linear infinite;
+            height: 1.25rem;
+            width: 1.25rem;
+            border-width: 4px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Employee List */
+        .employee-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .employee-btn {
+            padding: 1rem;
+            background-color: white;
+            color: #4b5563; 
+            font-weight: 600;
+            border-radius: 0.5rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.15s;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+            min-height: 4rem;
+            cursor: pointer;
+        }
+        .employee-btn:hover {
+            background-color: #eff6ff;
+            color: var(--color-primary);
+            transform: scale(1.02);
+        }
+        .employee-btn.selected {
+            background-color: #dbeafe; 
+            color: #1e40af; 
+            box-shadow: 0 0 0 3px #60a5fa; 
+            transform: scale(1);
+        }
+
+        /* Attendance Panel (Camera) */
+        .attendance-panel {
+            padding: 1.5rem;
+            background-color: #eff6ff; /* Blue-50 */
+            border: 1px solid #93c5fd; /* Blue-300 */
+            border-radius: 0.75rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-top: 1.5rem;
+        }
+        .camera-area {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #1f2937; /* Gray-900 */
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid #9ca3af; /* Gray-400 */
+            box-shadow: var(--shadow-md);
+        }
+        .camera-area video, .camera-area canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .camera-error {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #fef2f2; /* Red-100 */
+            color: #b91c1c; /* Red-700 */
+            padding: 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Admin Panels */
+        .admin-section {
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Admin Login specific styles */
+        #admin-login-card {
+            background-color: #fef2f2; /* Red-50 */
+            border: 1px solid #fca5a5; /* Red-300 */
+        }
+        #admin-login-card input {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            width: 100%;
+        }
+
+        /* Admin Settings specific styles */
+        #admin-settings .admin-section {
+            border: 1px solid #bfdbfe; /* Blue-200 */
+        }
+        #admin-settings input {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            width: 100%;
+        }
+
+        /* Attendance Log Table */
+        .log-container {
+            max-height: 24rem; /* max-h-96 */
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: white;
+        }
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        .attendance-table thead {
+            position: sticky;
+            top: 0;
+            background-color: #f9fafb; /* Gray-50 */
+            border-bottom: 1px solid #d1d5db;
+        }
+        .attendance-table th, .attendance-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .attendance-table tbody tr:hover {
+            background-color: #eff6ff; /* Blue-50 */
+        }
+        .selfie-img {
+            height: 2.5rem;
+            width: 2.5rem;
+            object-fit: cover;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Utility classes for status text */
+        .text-green { color: #16a34a; } /* Green-600 */
+        .text-red { color: #dc2626; } /* Red-600 */
+        .text-gray { color: #6b7280; } /* Gray-500 */
+        .text-purple { color: #7c3aed; } /* Purple-600 */
+        .hidden { display: none !important; }
+
+        /* Modal Styles */
+        #message-modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            display: none; /* Controlled by JS */
+            align-items: center;
+            justify-content: center;
+        }
+        #message-modal > div {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            max-width: 24rem;
+            width: 100%;
+        }
+        #modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--color-primary);
+            border-bottom: 1px solid #bfdbfe;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Responsive Table (Mobile View) */
+        @media (max-width: 600px) {
+            .app-title {
+                font-size: 1.5rem; /* 2xl on mobile */
+            }
+            .employee-grid {
+                grid-template-columns: 1fr; /* Single column for better tapping */
+            }
+            .employee-btn {
+                min-height: 3.5rem;
+            }
+            
+            .attendance-table thead { display: none; }
+            .attendance-table tr { 
+                display: block; 
+                margin-bottom: 0.75rem; 
+                border: 1px solid #e5e7eb; 
+                border-radius: 0.5rem; 
+                background-color: white;
+            }
+            .attendance-table td { 
+                display: block; 
+                text-align: right; 
+                padding: 0.5rem 1rem; 
+                position: relative; 
+            }
+            .attendance-table td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 1rem;
+                font-weight: 600;
+                color: #4b5563;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <div id="loading-initial" class="text-gray text-center">Initializing app and securing connection...</div>
+        
+        <!-- Main Application Container -->
+        <div id="main-container" class="hidden">
+            
+            <header class="app-header">
+                <h1 class="app-title">Attendance Portal</h1>
+                <!-- This button is now the "Back to Main Menu/Exit" button -->
+                <button id="admin-switch-btn" class="switch-btn hidden btn-exit-view">
+                    Back
+                </button>
+            </header>
+
+            <!-- 0. Initial Choice View -->
+            <div id="initial-choice-view" class="hidden" style="display: flex; flex-direction: column; gap: 1.5rem; padding-top: 1rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: #1f2937;">Select Your Role</h2>
+                <button id="employee-choice-btn" class="choice-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="choice-icon" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.38 0 2.5 1.12 2.5 2.5S13.38 10 12 10 9.5 8.88 9.5 7.5 10.62 5 12 5zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.84 6-3.84s5.97 1.85 6 3.84c-1.29 1.94-3.5 3.22-6 3.22z"/>
+                    </svg>
+                    Employee Check-in
+                </button>
+                <button id="admin-choice-btn" class="choice-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="choice-icon" viewBox="0 0 24 24" fill="white">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10h-2V9h2v2zm2-2V9h2V7h-2V5h-2v4h-2v2h4zm-4 4h8c-.53 2.55-2.07 4.7-4 5.92-1.93-1.22-3.47-3.37-4-5.92z"/>
+                    </svg>
+                    Admin Access
+                </button>
+            </div>
+
+
+            <!-- 1. Employee Attendance View -->
+            <div id="employee-view" class="hidden" style="margin-top: 0.5rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem;">1. Select Your Name to Start</h2>
+                <div id="employee-list" class="employee-grid">
+                    <!-- Employee buttons will be inserted here -->
+                </div>
+
+                <div id="attendance-panel" class="attendance-panel hidden">
+                    <h3 class="text-lg font-semibold text-blue-800 mb-4">2. Check-in for <span id="current-employee-name" style="font-weight: 800;"></span></h3>
+
+                    <!-- Camera and Photo Area -->
+                    <div class="camera-area mb-4">
+                        <video id="video-feed" autoplay playsinline></video>
+                        <canvas id="photo-canvas" class="hidden"></canvas>
+                        <div id="camera-error" class="camera-error hidden">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="height: 2rem; width: 2rem; margin-bottom: 0.5rem;" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                            Camera access denied or unavailable.
+                        </div>
+                    </div>
+                    
+                    <button id="capture-btn" class="btn-primary" style="background-color: var(--color-warning); margin-bottom: 1rem;">
+                        <div id="capture-loading" class="hidden" style="display: flex; justify-content: center; align-items: center;">
+                            <div class="loading-spinner"></div>
+                            Capturing...
+                        </div>
+                        <span id="capture-text">Capture Selfie</span>
+                    </button>
+
+                    <button id="submit-btn" class="btn-primary" style="background-color: #15803d;" disabled>
+                        <div id="submit-loading" class="hidden" style="display: flex; justify-content: center; align-items: center;">
+                            <div class="loading-spinner"></div>
+                            Verifying Location...
+                        </div>
+                        <span id="submit-text">Submit Attendance</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Admin View (Login/Settings/Records) -->
+            <div id="admin-view" class="hidden" style="margin-top: 0.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; padding-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; margin-bottom: 2rem;">Admin Panel</h2>
+                
+                <!-- Admin Login -->
+                <div id="admin-login-card" class="admin-section" style="margin-bottom: 2rem;">
+                    <h3 class="text-xl font-semibold text-red-700" style="margin-bottom: 1rem;">Admin Login</h3>
+                    <input type="text" id="admin-username" placeholder="Username (admin)" style="margin-bottom: 1rem;">
+                    <input type="password" id="admin-password" placeholder="Password (12345)" style="margin-bottom: 1rem;">
+                    <button id="admin-login-btn" class="btn-primary" style="background-color: var(--color-danger);">Access Admin</button>
+                    <p id="login-error" class="text-red hidden" style="font-size: 0.875rem; text-align: center; margin-top: 0.5rem;">Invalid credentials.</p>
+                </div>
+
+                <!-- Admin Settings (Visible after login) -->
+                <div id="admin-settings" class="hidden" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Office Location Settings -->
+                    <div class="admin-section" style="border: 1px solid #bfdbfe;">
+                        <h3 class="text-lg font-semibold text-blue-700" style="margin-bottom: 0.5rem;">Office Location & Vicinity</h3>
+                        <p class="text-sm text-gray" style="margin-bottom: 1rem;">Central coordinates and maximum distance (Haversine calculation).</p>
+                        <input type="number" id="office-lat" placeholder="Office Latitude (e.g., 37.7749)" step="0.000001" style="margin-bottom: 0.75rem;">
+                        <input type="number" id="office-lng" placeholder="Office Longitude (e.g., -122.4194)" step="0.000001" style="margin-bottom: 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                             <input type="number" id="office-radius" placeholder="Vicinity Radius (meters, e.g., 500)" step="1">
+                             <span class="text-gray">meters</span>
+                        </div>
+                        <button id="save-settings-btn" class="btn-primary" style="background-color: var(--color-primary); padding: 0.5rem 1rem;">Save Settings</button>
+                        <p id="settings-status" class="text-sm text-center font-medium" style="margin-top: 0.5rem;"></p>
+                    </div>
+
+                    <!-- Employee Management -->
+                    <div class="admin-section" style="border: 1px solid #d8b4fe;">
+                        <h3 class="text-lg font-semibold text-purple" style="color: #7c3aed; margin-bottom: 0.5rem;">Manage Employees</h3>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <input type="text" id="new-employee-name" placeholder="New Employee Name" style="flex-grow: 1;">
+                            <button id="add-employee-btn" class="btn-primary" style="background-color: #7c3aed; padding: 0.5rem 1rem; width: auto;">Add</button>
+                        </div>
+                        <ul id="current-employees-list" style="margin-top: 1rem; max-height: 10rem; overflow-y: auto; padding-right: 0.5rem; list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <!-- Existing employees will be listed here -->
+                        </ul>
+                    </div>
+
+                    <!-- Attendance Records -->
+                    <div class="admin-section" style="border: 1px solid #d1d5db;">
+                        <h3 class="text-lg font-semibold text-gray-800" style="margin-bottom: 1rem;">Attendance Log</h3>
+                        <div class="log-container">
+                            <table class="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Time</th>
+                                        <th>Distance</th>
+                                        <th>Selfie</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-log-body">
+                                    <!-- Attendance records will be listed here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Modal -->
+            <div id="message-modal">
+                <div>
+                    <h4 id="modal-title"></h4>
+                    <p id="modal-body" style="margin-bottom: 1.5rem;"></p>
+                    <button id="modal-close-btn" class="btn-primary" style="background-color: var(--color-primary);"></button>
+                </div>
+            </div>
+            
+            <p class="text-xs text-gray text-center" style="font-size: 0.75rem; color: #9ca3af; margin-top: 2rem;">
+                User ID: <span id="current-user-id">Loading...</span> | App ID: <span id="current-app-id">Loading...</span>
+            </p>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, doc, setDoc, onSnapshot, collection, query, orderBy, addDoc, deleteDoc
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: The following global variables are provided by the canvas environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Mock Config */ };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- GLOBAL STATE & FIREBASE SETUP ---
+        setLogLevel('Debug');
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false;
+        let officeSettings = { lat: 37.7749, lng: -122.4194, radius: 500 }; // Default: San Francisco, 500m
+        let employees = [];
+        let attendanceRecords = [];
+        let currentEmployee = null;
+        let capturedPhotoDataUrl = null;
+        let videoStream = null;
+
+        // DOM Elements
+        const mainContainer = document.getElementById('main-container');
+        const loadingInitial = document.getElementById('loading-initial');
+        const currentUserIdSpan = document.getElementById('current-user-id');
+        const currentAppIdSpan = document.getElementById('current-app-id');
+        
+        // Views
+        const initialChoiceView = document.getElementById('initial-choice-view');
+        const employeeChoiceBtn = document.getElementById('employee-choice-btn');
+        const adminChoiceBtn = document.getElementById('admin-choice-btn');
+        const adminSwitchBtn = document.getElementById('admin-switch-btn'); // Now the back/exit button
+        const employeeView = document.getElementById('employee-view');
+        const adminView = document.getElementById('admin-view');
+        
+        // Employee View Elements
+        const employeeListDiv = document.getElementById('employee-list');
+        const attendancePanel = document.getElementById('attendance-panel');
+        const currentEmployeeNameSpan = document.getElementById('current-employee-name');
+        const videoFeed = document.getElementById('video-feed');
+        const photoCanvas = document.getElementById('photo-canvas');
+        const cameraErrorDiv = document.getElementById('camera-error');
+        const captureBtn = document.getElementById('capture-btn');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Admin View Elements
+        const adminLoginCard = document.getElementById('admin-login-card');
+        const adminSettingsDiv = document.getElementById('admin-settings');
+        const adminUsernameInput = document.getElementById('admin-username');
+        const adminPasswordInput = document.getElementById('admin-password');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const loginErrorP = document.getElementById('login-error');
+        
+        const officeLatInput = document.getElementById('office-lat');
+        const officeLngInput = document.getElementById('office-lng');
+        const officeRadiusInput = document.getElementById('office-radius');
+        const saveSettingsBtn = document.getElementById('save-settings-btn');
+        const settingsStatusP = document.getElementById('settings-status');
+
+        const newEmployeeNameInput = document.getElementById('new-employee-name');
+        const addEmployeeBtn = document.getElementById('add-employee-btn');
+        const currentEmployeesListUl = document.getElementById('current-employees-list');
+        const attendanceLogBody = document.getElementById('attendance-log-body');
+        
+        // Modal Elements
+        const messageModal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            currentAppIdSpan.textContent = appId;
+        } catch (e) {
+            console.error("Error initializing Firebase:", e);
+            loadingInitial.textContent = "Error initializing application. Check console for details.";
+        }
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                currentUserIdSpan.textContent = userId;
+                isAuthReady = true;
+
+                // Stop loading and show the initial choice view
+                loadingInitial.classList.add('hidden');
+                mainContainer.classList.remove('hidden');
+                showView('initial');
+
+                // Start data listeners
+                if (db) {
+                    setupFirestoreListeners();
+                }
+            } else {
+                // Initial sign-in attempt
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication error:", error);
+                    loadingInitial.textContent = "Authentication failed. Please check network connection.";
+                }
+            }
+        });
+
+        // --- VIEW MANAGEMENT ---
+
+        function showView(viewName) {
+            // Hide all main views and the back button initially
+            initialChoiceView.classList.add('hidden');
+            employeeView.classList.add('hidden');
+            adminView.classList.add('hidden');
+            adminSwitchBtn.classList.add('hidden');
+            
+            // Stop camera and reset employee selection if leaving the check-in flow
+            if (viewName !== 'employee') {
+                stopCamera();
+                currentEmployee = null; // Clear selected employee
+                attendancePanel.classList.add('hidden');
+                
+                // Ensure admin panel returns to login if navigating away
+                if (adminSettingsDiv.classList.contains('hidden') === false) {
+                     adminLoginCard.classList.remove('hidden');
+                     adminSettingsDiv.classList.add('hidden');
+                }
+            }
+
+            if (viewName === 'initial') {
+                initialChoiceView.classList.remove('hidden');
+            } else if (viewName === 'employee') {
+                employeeView.classList.remove('hidden');
+                adminSwitchBtn.classList.remove('hidden');
+                adminSwitchBtn.textContent = 'Exit Check-in';
+                
+                // If employee already selected, start camera automatically
+                if (currentEmployee) {
+                    startCamera();
+                }
+            } else if (viewName === 'admin') {
+                adminView.classList.remove('hidden');
+                adminSwitchBtn.classList.remove('hidden');
+                adminSwitchBtn.textContent = 'Back to Main Menu';
+            }
+        }
+
+        // --- FIREBASE LISTENERS (No changes needed, paths are correct) ---
+
+        function getAdminConfigDocRef() {
+            // Private path for admin config
+            return doc(db, 'artifacts', appId, 'users', userId, 'config', 'office_settings');
+        }
+
+        function getEmployeesCollectionRef() {
+            // Public path for employees
+            return collection(db, 'artifacts', appId, 'public', 'data', 'employees');
+        }
+
+        function getAttendanceCollectionRef() {
+            // Public path for attendance
+            return collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
+        }
+
+        function setupFirestoreListeners() {
+            if (!isAuthReady) return;
+
+            // 1. Listen for Admin Config (Office Settings)
+            onSnapshot(getAdminConfigDocRef(), (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    officeSettings = docSnapshot.data();
+                    renderAdminSettings();
+                    console.log("Office settings updated:", officeSettings);
+                } else {
+                    // Initialize default settings if none exist
+                    setDoc(getAdminConfigDocRef(), officeSettings).catch(console.error);
+                }
+            }, (error) => console.error("Error listening to config:", error));
+
+            // 2. Listen for Employees
+            onSnapshot(getEmployeesCollectionRef(), (snapshot) => {
+                employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderEmployeeList();
+                renderCurrentEmployeesList();
+            }, (error) => console.error("Error listening to employees:", error));
+
+            // 3. Listen for Attendance Records
+            const q = query(getAttendanceCollectionRef(), orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                attendanceRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAttendanceLog();
+            }, (error) => console.error("Error listening to attendance:", error));
+        }
+
+        // --- GEOLOCATION & DISTANCE UTILS (No changes needed) ---
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
+
+        function getCurrentLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    return reject("Geolocation is not supported by your browser.");
+                }
+                
+                const options = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => resolve({ lat: position.coords.latitude, lng: position.coords.longitude }),
+                    (error) => {
+                        let message = "Geolocation failed: ";
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                message += "User denied the request for Geolocation. Please enable location services.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                message += "Location information is unavailable.";
+                                break;
+                            case error.TIMEOUT:
+                                message += "The request to get user location timed out.";
+                                break;
+                            default:
+                                message += "An unknown error occurred.";
+                                break;
+                        }
+                        reject(message);
+                    },
+                    options
+                );
+            });
+        }
+        
+        // --- CAMERA UTILS (No changes needed) ---
+
+        async function startCamera() {
+            try {
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => track.stop());
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" }
+                });
+                videoStream = stream;
+                videoFeed.srcObject = stream;
+                videoFeed.classList.remove('hidden');
+                photoCanvas.classList.add('hidden');
+                cameraErrorDiv.classList.add('hidden');
+                captureBtn.disabled = false;
+            } catch (error) {
+                console.error("Camera access error:", error);
+                cameraErrorDiv.classList.remove('hidden');
+                cameraErrorDiv.style.display = 'flex';
+                captureBtn.disabled = true;
+                submitBtn.disabled = true;
+            }
+        }
+        
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+        }
+
+        function takePhoto() {
+            if (!videoStream) {
+                showModal("Error", "Camera stream not active. Please retry selecting your name.");
+                return;
+            }
+
+            const context = photoCanvas.getContext('2d');
+            photoCanvas.width = videoFeed.videoWidth;
+            photoCanvas.height = videoFeed.videoHeight;
+            context.drawImage(videoFeed, 0, 0, photoCanvas.width, photoCanvas.height);
+            const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.8);
+            
+            capturedPhotoDataUrl = dataUrl;
+            videoFeed.classList.add('hidden');
+            photoCanvas.classList.remove('hidden');
+            submitBtn.disabled = false;
+        }
+
+        // --- UI RENDERING FUNCTIONS (Minor updates to accommodate new flow) ---
+
+        function renderEmployeeList() {
+            employeeListDiv.innerHTML = '';
+            if (employees.length === 0) {
+                const p = document.createElement('p');
+                p.textContent = 'No employees registered. Admin needs to add employees.';
+                p.style.gridColumn = '1 / -1';
+                p.style.color = '#6b7280';
+                p.style.textAlign = 'center';
+                employeeListDiv.appendChild(p);
+                return;
+            }
+            employees.forEach(employee => {
+                const btn = document.createElement('button');
+                btn.className = 'employee-btn';
+                if (currentEmployee && currentEmployee.id === employee.id) {
+                    btn.classList.add('selected');
+                }
+                btn.textContent = employee.name;
+                btn.addEventListener('click', () => selectEmployee(employee));
+                employeeListDiv.appendChild(btn);
+            });
+        }
+        
+        function selectEmployee(employee) {
+            currentEmployee = employee;
+            currentEmployeeNameSpan.textContent = employee.name;
+            attendancePanel.classList.remove('hidden');
+            capturedPhotoDataUrl = null;
+            submitBtn.disabled = true;
+            captureBtn.querySelector('#capture-text').textContent = 'Capture Selfie';
+            startCamera();
+            renderEmployeeList();
+        }
+
+        function renderAdminSettings() {
+            officeLatInput.value = officeSettings.lat || '';
+            officeLngInput.value = officeSettings.lng || '';
+            officeRadiusInput.value = officeSettings.radius || '';
+        }
+
+        function renderCurrentEmployeesList() {
+            currentEmployeesListUl.innerHTML = '';
+            employees.forEach(employee => {
+                const li = document.createElement('li');
+                li.style.display = 'flex';
+                li.style.justifyContent = 'space-between';
+                li.style.alignItems = 'center';
+                li.style.padding = '0.5rem';
+                li.style.backgroundColor = '#f9fafb';
+                li.style.borderRadius = '0.5rem';
+                li.style.border = '1px solid #e5e7eb';
+                li.innerHTML = `
+                    <span class="font-medium text-gray-700">${employee.name}</span>
+                    <button data-id="${employee.id}" class="delete-employee-btn" style="color: var(--color-danger); padding: 0.25rem; border-radius: 50%; transition: all 0.15s; background-color: transparent;">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="height: 1rem; width: 1rem; pointer-events: none;" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 100 2v6a1 1 0 100-2V8z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                `;
+                li.querySelector('.delete-employee-btn').onmouseover = function() { this.style.backgroundColor = '#fef2f2'; };
+                li.querySelector('.delete-employee-btn').onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+                currentEmployeesListUl.appendChild(li);
+            });
+        }
+        
+        function renderAttendanceLog() {
+            attendanceLogBody.innerHTML = '';
+            if (attendanceRecords.length === 0) {
+                 attendanceLogBody.innerHTML = '<tr><td colspan="4" class="text-gray" style="padding: 1rem; text-align: center;">No attendance records yet.</td></tr>';
+                 return;
+            }
+            attendanceRecords.forEach(record => {
+                const date = record.timestamp && record.timestamp.toMillis ? new Date(record.timestamp.toMillis()) : new Date();
+                const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const dateStr = date.toLocaleDateString();
+                const distance = record.distance || 0;
+                const distanceStr = distance ? `${distance.toFixed(0)} m` : 'N/A';
+                
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #f3f4f6';
+                
+                const distanceClass = record.inVicinity ? 'text-green' : 'text-red';
+                
+                row.innerHTML = `
+                    <td data-label="Name" style="padding: 0.75rem; font-weight: 500; color: #1f2937;">${record.name}</td>
+                    <td data-label="Time" style="padding: 0.75rem; color: #374151;">${dateStr} ${timeStr}</td>
+                    <td data-label="Distance" style="padding: 0.75rem; font-weight: 600;" class="${distanceClass}">${distanceStr}</td>
+                    <td data-label="Selfie" style="padding: 0.75rem;">
+                        ${record.selfieDataUrl ? 
+                            `<img src="${record.selfieDataUrl}" alt="Selfie" class="selfie-img" 
+                                onclick="showModal('Selfie Proof - ${record.name}', '<img id=\\'modal-img-preview\\' src=\\'${record.selfieDataUrl}\\' style=\\'width: 100%; border-radius: 0.5rem; box-shadow: 0 10px 15px rgba(0,0,0,0.1);\\'>', true)">` : 
+                            '<span class="text-gray">N/A</span>'}
+                    </td>
+                `;
+                attendanceLogBody.appendChild(row);
+            });
+        }
+        
+        function showModal(title, bodyContent, isHtml = false) {
+            modalTitle.textContent = title;
+            if (isHtml) {
+                modalBody.innerHTML = bodyContent;
+            } else {
+                modalBody.textContent = bodyContent;
+            }
+            messageModal.classList.remove('hidden');
+            messageModal.style.display = 'flex';
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            messageModal.classList.add('hidden');
+            messageModal.style.display = 'none';
+        });
+
+        // --- EVENT HANDLERS (Updated to use showView) ---
+
+        // Initial Choice buttons
+        employeeChoiceBtn.addEventListener('click', () => showView('employee'));
+        adminChoiceBtn.addEventListener('click', () => showView('admin'));
+
+        // Back/Exit button (from employee/admin view back to initial choice)
+        adminSwitchBtn.addEventListener('click', () => showView('initial'));
+
+        // Hardcoded Admin Login (for demo purposes)
+        adminLoginBtn.addEventListener('click', () => {
+            const username = adminUsernameInput.value;
+            const password = adminPasswordInput.value;
+            
+            if (username === 'admin' && password === '12345') {
+                adminLoginCard.classList.add('hidden');
+                adminSettingsDiv.classList.remove('hidden');
+                loginErrorP.classList.add('hidden');
+                showModal("Admin Access Granted", "Welcome! You can now configure location settings and manage employees.");
+            } else {
+                loginErrorP.classList.remove('hidden');
+            }
+        });
+
+        // Save Office Settings
+        saveSettingsBtn.addEventListener('click', async () => {
+            const lat = parseFloat(officeLatInput.value);
+            const lng = parseFloat(officeLngInput.value);
+            const radius = parseInt(officeRadiusInput.value);
+
+            if (isNaN(lat) || isNaN(lng) || isNaN(radius) || radius <= 0) {
+                settingsStatusP.textContent = 'Error: Please enter valid coordinates and a positive radius.';
+                settingsStatusP.classList.remove('text-green');
+                settingsStatusP.classList.add('text-red');
+                return;
+            }
+
+            const newSettings = { lat, lng, radius };
+            try {
+                await setDoc(getAdminConfigDocRef(), newSettings);
+                settingsStatusP.textContent = 'Office settings saved successfully!';
+                settingsStatusP.classList.remove('text-red');
+                settingsStatusP.classList.add('text-green');
+            } catch (e) {
+                console.error("Error saving settings:", e);
+                settingsStatusP.textContent = 'Error saving settings to database.';
+                settingsStatusP.classList.remove('text-green');
+                settingsStatusP.classList.add('text-red');
+            }
+            setTimeout(() => settingsStatusP.textContent = '', 3000);
+        });
+        
+        // Add Employee
+        addEmployeeBtn.addEventListener('click', async () => {
+            const name = newEmployeeNameInput.value.trim();
+            if (!name) {
+                showModal("Input Required", "Please enter the employee's name.");
+                return;
+            }
+            
+            try {
+                await addDoc(getEmployeesCollectionRef(), { name: name, createdAt: new Date() });
+                newEmployeeNameInput.value = '';
+                showModal("Success", `Employee '${name}' added.`);
+            } catch (e) {
+                console.error("Error adding employee:", e);
+                showModal("Error", "Could not add employee to database.");
+            }
+        });
+        
+        // Delete Employee
+        currentEmployeesListUl.addEventListener('click', async (e) => {
+            if (e.target.closest('.delete-employee-btn')) {
+                const button = e.target.closest('.delete-employee-btn');
+                const employeeId = button.dataset.id;
+                
+                if (employeeId) {
+                    try {
+                        await deleteDoc(doc(getEmployeesCollectionRef(), employeeId));
+                        showModal("Deleted", "Employee removed successfully.");
+                    } catch (e) {
+                        console.error("Error deleting employee:", e);
+                        showModal("Error", "Could not delete employee from database.");
+                    }
+                }
+            }
+        });
+
+        // Capture Photo
+        captureBtn.addEventListener('click', () => {
+            takePhoto();
+            captureBtn.querySelector('#capture-text').textContent = 'Retake Photo';
+        });
+
+        // Submit Attendance
+        submitBtn.addEventListener('click', async () => {
+            if (!currentEmployee || !capturedPhotoDataUrl) {
+                showModal("Missing Data", "Please select your name and capture a selfie first.");
+                return;
+            }
+            
+            // Start loading state
+            submitBtn.disabled = true;
+            submitBtn.querySelector('#submit-text').classList.add('hidden');
+            submitBtn.querySelector('#submit-loading').classList.remove('hidden');
+            submitBtn.querySelector('#submit-loading').style.display = 'flex';
+
+
+            try {
+                // 1. Get Geolocation
+                const userLocation = await getCurrentLocation();
+                
+                // 2. Calculate Distance
+                const distance = haversineDistance(
+                    userLocation.lat, userLocation.lng,
+                    officeSettings.lat, officeSettings.lng
+                );
+                
+                const inVicinity = distance <= officeSettings.radius;
+                
+                // 3. Prepare and Save Attendance Record
+                const record = {
+                    name: currentEmployee.name,
+                    timestamp: new Date(),
+                    latitude: userLocation.lat,
+                    longitude: userLocation.lng,
+                    officeLat: officeSettings.lat,
+                    officeLng: officeSettings.lng,
+                    distance: distance, // in meters
+                    inVicinity: inVicinity,
+                    selfieDataUrl: capturedPhotoDataUrl 
+                };
+
+                await addDoc(getAttendanceCollectionRef(), record);
+
+                // 4. Success message and reset
+                showView('initial'); // Return to initial screen on successful check-in
+                
+                const distanceStr = `${distance.toFixed(0)} meters`;
+                if (inVicinity) {
+                    showModal("Check-in Complete!", `Attendance marked for ${record.name}. You were ${distanceStr} from the office, which is WITHIN the ${officeSettings.radius}m radius.`);
+                } else {
+                    showModal("Location Warning", `Attendance marked, but you were ${distanceStr} from the office, which is OUTSIDE the ${officeSettings.radius}m radius. Please check in closer to the office.`);
+                }
+                
+                captureBtn.querySelector('#capture-text').textContent = 'Capture Selfie';
+                submitBtn.disabled = true;
+
+            } catch (error) {
+                console.error("Submission Error:", error);
+                showModal("Submission Failed", error.toString());
+            } finally {
+                // End loading state
+                submitBtn.querySelector('#submit-loading').style.display = 'none';
+                submitBtn.querySelector('#submit-loading').classList.add('hidden');
+                submitBtn.querySelector('#submit-text').classList.remove('hidden');
+            }
+        });
+
+    </script>
+</body>
+</html>
