@@ -520,13 +520,14 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         // Define a mock configuration for local/external hosting to prevent Firebase initialization errors.
+        // !!! IMPORTANT: If hosting externally, REPLACE this MOCK_FIREBASE_CONFIG with YOUR actual Firebase project credentials.
         const MOCK_FIREBASE_CONFIG = { 
-            apiKey: "mock-key",
-            authDomain: "mock-app.firebaseapp.com",
-            projectId: "mock-project",
-            storageBucket: "mock-app.appspot.com",
-            messagingSenderId: "mock-id",
-            appId: "mock-app-id"
+            apiKey: "YOUR_API_KEY", // <-- REPLACE THIS WITH YOUR ACTUAL API KEY
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com", // <-- REPLACE THIS
+            projectId: "YOUR_PROJECT_ID", // <-- REPLACE THIS
+            storageBucket: "YOUR_PROJECT_ID.appspot.com", // <-- REPLACE THIS
+            messagingSenderId: "YOUR_MESSAGING_ID", // <-- REPLACE THIS
+            appId: "YOUR_APP_ID" // <-- REPLACE THIS
         };
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : MOCK_FIREBASE_CONFIG;
         
@@ -631,7 +632,7 @@
                 } catch (error) {
                     console.error("Authentication error:", error);
                     // Update the error message to be less generic if auth fails after init
-                    loadingInitial.textContent = "Authentication failed. Please check network connection.";
+                    loadingInitial.textContent = "Authentication failed. Check your Firebase credentials if running externally.";
                 }
             }
         });
