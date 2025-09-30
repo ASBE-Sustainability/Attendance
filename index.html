@@ -520,18 +520,18 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         // !!! EXTERNAL HOSTING NOTE !!!
-        // If you are running this outside of the secure environment, REPLACE the MOCK_FIREBASE_CONFIG
-        // below with your actual Firebase project credentials.
-        // ALSO: Ensure you have enabled the Anonymous sign-in provider in your Firebase Console > Authentication tab.
-        const MOCK_FIREBASE_CONFIG = { 
-            apiKey: "YOUR_API_KEY", 
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID", 
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_ID",
-            appId: "YOUR_APP_ID"
+        // This configuration has been replaced with your actual Firebase project credentials.
+        // The previous authentication error should now be resolved, provided Anonymous sign-in is enabled.
+        const DEFAULT_FIREBASE_CONFIG = { 
+            apiKey: "AIzaSyCI8sPviFbZ8GazWU8Q2kQAN1sJF-So21s", 
+            authDomain: "niubr-49486.firebaseapp.com",
+            projectId: "niubr-49486", 
+            storageBucket: "niubr-49486.firebasestorage.app",
+            messagingSenderId: "271570780980",
+            appId: "1:271570780980:web:0f3fe821f46223bc6c5b61",
+            measurementId: "G-NBSQQ07HKC"
         };
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : MOCK_FIREBASE_CONFIG;
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
         
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
@@ -609,7 +609,6 @@
                 <p style="color: var(--color-danger); font-weight: 700;">Error Initializing Firebase</p>
                 <p style="font-size: 0.9rem;">Check your console for configuration errors. If running externally, ensure MOCK_FIREBASE_CONFIG is fully replaced with your project keys.</p>
             `;
-            // Removed 'return;' statement here to fix the SyntaxError
         }
         
         // Check if 'auth' was successfully initialized before attempting authentication listeners.
@@ -867,7 +866,7 @@
             attendancePanel.classList.remove('hidden');
             capturedPhotoDataUrl = null;
             submitBtn.disabled = true;
-            captureBtn.querySelector('#capture-text').textContent = 'Capture Selfie';
+            captureBtn.querySelector('#capture-text').textContent = 'Retake Photo';
             startCamera();
             renderEmployeeList();
         }
@@ -1098,7 +1097,7 @@
                     showModal("Location Warning", `Attendance marked, but you were ${distanceStr} from the office, which is OUTSIDE the ${officeSettings.radius}m radius. Please check in closer to the office.`);
                 }
                 
-                captureBtn.querySelector('#capture-text').textContent = 'Capture Selfie';
+                captureBtn.querySelector('#capture-text').textContent = 'Retake Photo';
                 submitBtn.disabled = true;
 
             } catch (error) {
